@@ -1,0 +1,58 @@
+# ==========================================
+# Quartus Prime / Hardware
+# ==========================================
+# Massive intermediate build and mapping databases
+db/
+incremental_db/
+greybox_tmp/
+
+# Synthesis and Fitter output directories
+output_files/
+simulation/
+timing/
+
+# Quartus workspace and user settings (local to your machine)
+*.qws
+*.bak
+*.qdf
+*.qarlog
+
+# Compilation reports and logs
+*.rpt
+*.summary
+*.smsg
+*.jdi
+*.pin
+*.done
+
+# Design Space Explorer (DSE II) sweeps
+dse/
+dse_*/
+
+# ==========================================
+# Python / Scripting
+# ==========================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Jupyter / IPython (if you use notebooks for data analysis)
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# ==========================================
+# OS & Editor
+# ==========================================
+.DS_Store
+Thumbs.db
+
+# Only uncomment this if you don't want to share VSCode workspace settings
+# .vscode/
