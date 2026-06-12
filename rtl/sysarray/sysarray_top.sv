@@ -39,7 +39,12 @@ module sysarray_top #(
 
 );
 
-sysarray_core I_systolic_core (
+sysarray_core #(
+	.DATA_WIDTH(DATA_WIDTH),
+	.ACCM_WIDTH(ACCM_WIDTH),
+	.NUM_ROWS  (NUM_ROWS),
+	.NUM_COLS  (NUM_COLS)
+) I_systolic_core (
 	.clk_i  (clk_i  ),
 	.rstn_i (rstn_i ),
 	.latch_i(latch_i),
