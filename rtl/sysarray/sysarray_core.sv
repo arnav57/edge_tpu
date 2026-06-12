@@ -87,3 +87,5 @@ sysarray #(
 
 
 endmodule : sysarray_core
+
+`default_nettype wire

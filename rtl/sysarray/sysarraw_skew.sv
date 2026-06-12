@@ -61,3 +61,5 @@ module sys_skew #(
     end
 
 endmodule : sys_skew
+
+`default_nettype wire

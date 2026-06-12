@@ -6,7 +6,7 @@
 import tpu_pkg::*;
 
 
-module sysarray_core #(
+module sysarray_top #(
 	// Inherit PE Config
 	parameter int DATA_WIDTH = tpu_pkg::ACTV_WIDTH,
 	parameter int ACCM_WIDTH = tpu_pkg::PSUM_WIDTH,
@@ -54,4 +54,6 @@ sysarray_core I_systolic_core (
 );
 
 
-endmodule : sysarray_core
+endmodule : sysarray_top
+
+`default_nettype wire
