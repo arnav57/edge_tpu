@@ -18,8 +18,15 @@ package tpu_pkg;
 	parameter int PSUM_WIDTH = (2 * ACTV_WIDTH) + $clog2(MATRIX_INNER_DIM_MAX); // see 'MATRIX_INNER_DIM_MAX'
 
 	//////// Systolic Array
-	parameter int ARRAY_NUM_ROWS = 2;
-	parameter int ARRAY_NUM_COLS = 2;
+	`ifdef SIMULATION
+		parameter int ARRAY_NUM_ROWS = 2;
+		parameter int ARRAY_NUM_COLS = 2;
+	`else
+		// With virtual pins we can close timing @ 150 MHz!!!
+		// This will probably change as we continue with the design
+		parameter int ARRAY_NUM_ROWS = 20;
+		parameter int ARRAY_NUM_COLS = 20;
+	`endif
 
 
 endpackage : tpu_pkg
