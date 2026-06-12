@@ -39,7 +39,8 @@ module sysarray_core #(
 
 );
 
-/// Here we connect and create the skewed datapath for activations. This ensures we feed the array at the proper timings
+/// Here we connect and create the skewed datapath for activations. 
+/// This ensures we feed the array at the proper timings
 /// Also lets us simplify the memory-fetch logic upstream that drives this entire thing :P
 
 logic signed [DATA_WIDTH-1:0] A_skewed_int  [NUM_ROWS];
@@ -47,7 +48,7 @@ logic 						  Av_skewed_int [NUM_ROWS];
 
 genvar i;
 generate
-	for (i = 0; i < NUM_ROWS; i++) begin
+	for (i = 0; i < NUM_ROWS; i++) begin : a_skew
 		sys_skew #(
 			.DATA_WIDTH( DATA_WIDTH ),
 			.DEPTH     ( i          )
@@ -80,7 +81,7 @@ sysarray #(
 	.P_o      ( P_o                 ),
 	.Av_i     ( Av_skewed_int       ),
 	.Av_o     ( Av_o                ),
-	.Pv_i     ( {NUM_COLS{1'b1}}    ),
+	.Pv_i     ( '{default: 1'b1}   ), // the tick here lets this replication produce an unpacked type that auto-sizes
 	.Pv_o     ( Pv_o                )
 );
 

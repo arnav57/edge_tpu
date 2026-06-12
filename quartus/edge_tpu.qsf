@@ -39,7 +39,7 @@
 
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE115F29C7
-set_global_assignment -name TOP_LEVEL_ENTITY sysarray
+set_global_assignment -name TOP_LEVEL_ENTITY sysarray_top
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 20.1.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "19:26:24  JUNE 11, 2026"
 set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Lite Edition"
@@ -51,15 +51,9 @@ set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name OPTIMIZATION_MODE "AGGRESSIVE PERFORMANCE"
 set_global_assignment -name CYCLONEII_OPTIMIZATION_TECHNIQUE SPEED
-set_global_assignment -name SDC_FILE ../constraints/ws_pe.sdc
-set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/tpu/tpu_pkg.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sysarray/ws_pe.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sysarray/sysarray.sv
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name SEARCH_PATH "c:\\users\\arnav\\documents\\github\\edge_tpu\\rtl\\sysarray"
 set_instance_assignment -name VIRTUAL_PIN ON -to A_i*
 set_instance_assignment -name VIRTUAL_PIN ON -to Av_i*
 set_instance_assignment -name VIRTUAL_PIN ON -to P_i*
@@ -68,4 +62,15 @@ set_instance_assignment -name VIRTUAL_PIN ON -to A_o*
 set_instance_assignment -name VIRTUAL_PIN ON -to Av_o*
 set_instance_assignment -name VIRTUAL_PIN ON -to P_o*
 set_instance_assignment -name VIRTUAL_PIN ON -to Pv_o*
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name SDC_FILE ../constraints/ws_pe.sdc
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/tpu/tpu_pkg.sv
+set_global_assignment -name SOURCE_FILE db/edge_tpu.cmp.rdb
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sysarray/ws_pe.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sysarray/sysarray_top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sysarray/sysarray_core.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sysarray/sysarray.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sysarray/sysarraw_skew.sv
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

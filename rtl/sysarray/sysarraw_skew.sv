@@ -26,7 +26,7 @@ module sys_skew #(
     output wire                         signal_valid_skewed_o
 );
 
-    if (DEPTH == 0) begin
+    generate if (DEPTH == 0) begin : skew_path
 
         // Row 0 always direct regardless of hold_i
         // This infers a wire
@@ -42,11 +42,11 @@ module sys_skew #(
 
         always_ff @(posedge clk_i) begin
             if (~rstn_i) begin
-                S_sr  <= {DEPTH{DATA_WIDTH{1'b0}}};
-                Sv_sr <= {DEPTH{1'b0}};
+                S_sr  <= '{default: 1'b0}; // auto-sizing unpacked array assignment (nice good feature, NOT confusing!!)
+                Sv_sr <= '{default: 1'b0}; // auto-sizing unpacked array assignment (nice good feature, NOT confusing!!)
             end else begin
-                S_sr [0] <= S_i;
-                Sv_sr[0] <= Sv_i;
+                S_sr [0] <= signal_i;
+                Sv_sr[0] <= signal_valid_i;
                 for (int s = 1; s < DEPTH; s++) begin
                     S_sr [s] <= S_sr [s-1];
                     Sv_sr[s] <= Sv_sr[s-1];
@@ -55,10 +55,10 @@ module sys_skew #(
         end
 
         // Mux between skewed and direct path
-        assign S_o  = bypass_i ? S_i             : S_sr [DEPTH-1];
-        assign Sv_o = bypass_i ? Sv_i            : Sv_sr[DEPTH-1];
-
+        assign signal_skewed_o       = bypass_i ? signal_i       : S_sr [DEPTH-1];
+        assign signal_valid_skewed_o = bypass_i ? signal_valid_i : Sv_sr[DEPTH-1];
     end
+    endgenerate
 
 endmodule : sys_skew
 
