@@ -24,6 +24,8 @@ timing/
 *.jdi
 *.pin
 *.done
+*modelsim.ini
+*transcript
 
 # Design Space Explorer (DSE II) sweeps
 dse/
@@ -56,3 +58,6 @@ Thumbs.db
 
 # Only uncomment this if you don't want to share VSCode workspace settings
 # .vscode/
+
+#### SIMULATION IGNORES
+sim/results/
