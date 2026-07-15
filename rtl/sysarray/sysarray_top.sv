@@ -23,6 +23,7 @@ module sysarray_top #(
 	// Latch/Clear Weight
 	input  wire                         latch_i,
 	input  wire                         clear_i,
+	input  wire                         loading_i,
 
 	// Activation IO
 	input  wire signed [DATA_WIDTH-1:0] A_i  [NUM_ROWS]  ,
@@ -49,6 +50,7 @@ sysarray_core #(
 	.rstn_i (rstn_i ),
 	.latch_i(latch_i),
 	.clear_i(clear_i),
+	.loading_i(loading_i),
 	.A_i    (A_i    ),
 	.A_o    (A_o    ),
 	.P_i    (P_i    ),

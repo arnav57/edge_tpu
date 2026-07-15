@@ -21,6 +21,7 @@ module sysarray_core #(
 	input  wire                         rstn_i ,
 
 	// Latch/Clear Weight
+	input  wire 						loading_i,
 	input  wire                         latch_i,
 	input  wire                         clear_i,
 
@@ -55,7 +56,7 @@ generate
 		) I_systolic_A_skew (
 			.clk_i                  ( clk_i            ),
 			.rstn_i                 ( rstn_i           ),
-			.bypass_i               ( latch_i          ),
+			.bypass_i               ( loading_i        ),
 			.signal_i               ( A_i[i]           ),
 			.signal_valid_i         ( Av_i[i]          ),
 			.signal_skewed_o        ( A_skewed_int[i]  ),

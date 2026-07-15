@@ -40,6 +40,8 @@ __pycache__/
 *$py.class
 
 # Virtual environments
+sim_env/
+.sim_env/
 venv/
 .venv/
 env/

@@ -1,8 +1,6 @@
-#!/home/arnav/github/edge_tpu/sim_env/bin/python3
-# -*- coding: utf-8 -*-
-import re
+#!/home/arnav/github/edge_tpu/sim_env/bin/python3.13
 import sys
 from cocotb_tools.config import main
 if __name__ == '__main__':
-    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
     sys.exit(main())

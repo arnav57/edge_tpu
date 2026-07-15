@@ -1,27 +1,45 @@
 # =============================================================================
-# Layer 1: Systolic Array Core
-# Pure RTL, no vendor primitives — Icarus works fine here too.
-# Switch to icarus with: make SIM=icarus
+# cocotb setup for only systolic array testing (run `make` in this dir to use)
 # =============================================================================
 
-LAYER    = sysarray
-TOPLEVEL = sysarray_core
-MODULE   = test_sysarray
+SIM          = questa-compat
+TOPLEVEL_LANG = verilog
 
-# ── Sources ───────────────────────────────────────────────────────────────────
-VERILOG_SOURCES += $(RTL_ROOT)/tpu/tpu_pkg.sv
+COCOTB_TOPLEVEL     = sysarray_top
+COCOTB_TEST_MODULES = test_sysarray
+
+RTL_ROOT 	= $(abspath ../../rtl)
+SIM_ROOT 	= $(abspath $(CURDIR)/..)
+COMMON_ROOT = $(SIM_ROOT)/common
+
+SIM_BUILD           = ../results/sysarray/sim_build
+COCOTB_RESULTS_FILE = ../results/sysarray/results.xml
+
+VERILOG_SOURCES  = $(RTL_ROOT)/tpu/tpu_pkg.sv
 VERILOG_SOURCES += $(RTL_ROOT)/sysarray/ws_pe.sv
 VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarraw_skew.sv
 VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarray.sv
 VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarray_core.sv
+VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarray_top.sv
 
+COMPILE_ARGS += -sv
+COMPILE_ARGS += -suppress 2583
+COMPILE_ARGS += -suppress 12110
 
-.PHONY: sim
+SIM_ARGS += +acc
+SIM_ARGS += -suppress 2583
+SIM_ARGS += -suppress 12110
+SIM_ARGS += -do "$(COMMON_ROOT)/wave.do"
+SIM_ARGS += -wlf "$(SIM_BUILD)/waves.wlf"
 
-sim:
-	mkdir -p ../results/$(LAYER)
-	cd ../results/$(LAYER) && $(MAKE) -f $(CURDIR)/Makefile _sim
+export SIM_BUILD
 
-_sim: results.xml
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
-include ../Makefile.common
+.PHONY: info
+
+info:
+	@echo $(RTL_ROOT)
+
+waves:
+	@cd $(SIM_BUILD) && vsim -view waves.wlf
