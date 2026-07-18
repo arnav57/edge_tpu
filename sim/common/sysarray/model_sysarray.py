@@ -192,7 +192,7 @@ class SystolicArray():
 				self.write_en.value = 1
 			await RisingEdge(self.clock)
 
-		await RisingEdge(self.clock)
+		#await RisingEdge(self.clock)
 
 		# reset the inputs to 0 after
 		self.write_en.value = 0
@@ -207,7 +207,7 @@ class SystolicArray():
 
 		self.read_en.value = 0
 
-		await ClockCycles(self.clock, 5 * self.nrows)
+		await ClockCycles(self.clock, 10 * self.nrows)
 
 
 

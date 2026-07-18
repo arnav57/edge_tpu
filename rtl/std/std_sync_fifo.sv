@@ -84,6 +84,20 @@ module std_sync_fifo #(
 		end
 	end
 
+	// Delay chain for the read_en. Since the output shows up after 1cc, we reset the output to 'd0 after 2 ccs;
+	// Thus we should show the correct output on the posedge of rd_en_i, but keep the output valid 2 cycles after
+	logic       rd_en_d1r;
+	wire 		rd_en_internal;
+	always_ff @(posedge fifo_clk_i) begin
+		if(~fifo_rstn_i) begin
+			rd_en_d1r <= 2'b0;
+		end else begin
+			rd_en_d1r <= rd_en_i;
+		end
+	end
+	assign rd_en_internal = rd_en_i | rd_en_d1r;
+
+
 	// FIFO size can be found with a dedicated counter. Counts up on a write, and counts down on a read	
 	// define empty and full flags
 	assign fifo_empty_o = (fifo_sz_r == 'b0); 			// FIFO is empty when the read and write points are the same 
@@ -92,6 +106,6 @@ module std_sync_fifo #(
 	assign rd_ptr_o     = rd_ptr_r;
 	assign wr_ptr_o     = wr_ptr_r;
 
-	assign rd_data_o    = (actually_read) ? rd_data_r : 'd0; // ensure data is only valid one cycle. When read goes low we reset to 0
+	assign rd_data_o    = (rd_en_internal) ? rd_data_r : 'd0; // ensure data is only valid one cycle. When read goes low we reset to 0
 
 endmodule : std_sync_fifo

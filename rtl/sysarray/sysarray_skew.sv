@@ -51,6 +51,7 @@ generate for (row = 0; row < NUM_ROWS; row++) begin : gen_skew_fifo
 		.fifo_empty_o ( /* FLOATING */ )
 	);
 
+	// Bypass the FIFOs entirely when loading weights
 	assign data_o[row] = (loading_i) ? data_i[row] : fifo_data[row];
 
 end	
@@ -93,7 +94,6 @@ end
 endgenerate
 
 
-// Bypass the FIFOs entirely when loading weights
 
 endmodule : sysarray_skew
 
