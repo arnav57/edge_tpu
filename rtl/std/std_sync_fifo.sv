@@ -92,6 +92,6 @@ module std_sync_fifo #(
 	assign rd_ptr_o     = rd_ptr_r;
 	assign wr_ptr_o     = wr_ptr_r;
 
-	assign rd_data_o    = rd_data_r;
+	assign rd_data_o    = (actually_read) ? rd_data_r : 'd0; // ensure data is only valid one cycle. When read goes low we reset to 0
 
 endmodule : std_sync_fifo

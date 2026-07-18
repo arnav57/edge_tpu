@@ -80,7 +80,7 @@ generate
 			assign latch_mesh[x] = latch_i;
 		end else begin
 			logic [3:0] latch_delay;
-			always_ff @(posedge clk_i or negedge rstn_i) begin
+			always_ff @(posedge clk_i) begin
 				if(~rstn_i) begin
 					 latch_delay <= 4'd0;
 				end else begin

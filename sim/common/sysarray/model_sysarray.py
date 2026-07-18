@@ -92,7 +92,7 @@ class SystolicArray():
 
 	#### HIDDEN HELPERS ####
 	
-	def _to_weights(self, in_matrix:npt.NDArray[np.int8]):
+	def _to_vectors(self, in_matrix:npt.NDArray[np.int8]):
 		# format as a list of cols
 		cols_list = [in_matrix[:, i].tolist() for i in range(in_matrix.shape[1])]
 		return cols_list
@@ -134,7 +134,7 @@ class SystolicArray():
 
 	async def load_random_weights(self, clear_after=False):
 		weights = np.random.randint(-128, 128, size=(self.nrows, self.ncols), dtype=np.int8)
-		activation_inputs = self._to_weights(weights)
+		activation_inputs = self._to_vectors(weights)
 		self.loading.value = 1
 
 		await RisingEdge(self.clock)
@@ -178,6 +178,38 @@ class SystolicArray():
 			self.logger.info(f"Succesfully loaded the following weights into the array:\n{pformat(weights)}")
 
 		return weights
+
+	async def load_random_activations(self):
+		weights = np.random.randint(-128, 128, size=(self.nrows, self.ncols), dtype=np.int8)
+		activation_inputs = self._to_vectors(weights)
+
+		await RisingEdge(self.clock)
+
+		# load the matrix in col by col 
+		for col in range(self.ncols):
+			for row in range(self.nrows):
+				self.activation_in(row).value = activation_inputs[col][row]
+				self.write_en.value = 1
+			await RisingEdge(self.clock)
+
+		await RisingEdge(self.clock)
+
+		# reset the inputs to 0 after
+		self.write_en.value = 0
+		for row in range(self.nrows):
+			self.activation_in(row).value       = 0
+			self.activation_valid_in(row).value = 0
+
+		self.read_en.value = 1
+
+		# there are 20 things in the FIFO now, so we wait 20 ccs
+		await ClockCycles(self.clock, 20)
+
+		self.read_en.value = 0
+
+		await ClockCycles(self.clock, 5 * self.nrows)
+
+
 
 
 

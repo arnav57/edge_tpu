@@ -17,6 +17,8 @@ module sysarray_skew #(
 	input  wire signed [DATA_WIDTH-1:0] data_i  [NUM_ROWS]  ,
 	output wire signed [DATA_WIDTH-1:0] data_o  [NUM_ROWS]  ,
 
+	output wire signed 					data_valid_o [NUM_ROWS],
+
 	input wire rd_en_i,
 	input wire wr_en_i
 );
@@ -59,20 +61,33 @@ genvar i;
 generate for (i = 0; i < NUM_ROWS; i++) begin : gen_meshes
 	if (i == 0) begin
 		assign rd_en_mesh[i] = rd_en_i;
+		logic valid_delay;
+		always_ff @(posedge clk_i) begin
+			if(~rstn_i) begin
+				valid_delay <= 1'b0;
+			end else begin
+				valid_delay <= rd_en_i;
+			end
+		end
+		assign data_valid_o[i] = valid_delay;
 	end else begin
 
 		logic [2:0] rd_en_delay;
+		logic       valid_delay;
 		always_ff @(posedge clk_i) begin
 			if (~rstn_i) begin
 				rd_en_delay <= 3'b0;
+				valid_delay <= 1'b0;
 			end else begin
 				rd_en_delay[0] <= rd_en_mesh[i - 1];
 				rd_en_delay[1] <= rd_en_delay[0];
 				rd_en_delay[2] <= rd_en_delay[1]; 
+				valid_delay    <= rd_en_mesh[i];
 			end
 		end
 
-		assign rd_en_mesh[i] = rd_en_delay[2]; 
+		assign rd_en_mesh[i]   = rd_en_delay[2]; 
+		assign data_valid_o[i] = valid_delay;
 	end
 end
 endgenerate

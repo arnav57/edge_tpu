@@ -62,6 +62,7 @@ sysarray_skew #(
 	.loading_i ( loading_i    ),
 	.data_i    ( A_i          ),
 	.data_o    ( A_skewed_int ),
+	.data_valid_o( Av_skewed_int),
 	.rd_en_i   ( rd_en_i      ),
 	.wr_en_i   ( wr_en_i      )
 );

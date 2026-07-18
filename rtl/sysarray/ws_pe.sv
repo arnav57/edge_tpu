@@ -122,8 +122,8 @@ always_ff @(posedge clk_i) begin
 		mul_r <= {2*DATA_WIDTH{1'b0}};
 		add_r <= {ACCM_WIDTH{1'b0}};
 	end else begin
-		mul_r <= $signed(A_d1r * B_r);
-		add_r <= $signed(mul_r + P_d2r);
+		mul_r <= A_d1r * B_r;	// Removed $signed(.) here as it is a self-determined expr
+		add_r <= mul_r + P_d2r; // Removed $signed(.) here as it is a self-determined expr
 	end
 end
 
