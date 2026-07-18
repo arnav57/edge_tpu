@@ -155,6 +155,8 @@ class SystolicArray():
 			self.activation_in(row).value       = 0
 			self.activation_valid_in(row).value = 0
 
+		self.loading.value = 0
+
 		# wait for the signals to propagate
 		await ClockCycles(self.clock, self.ncols * 4)
 
