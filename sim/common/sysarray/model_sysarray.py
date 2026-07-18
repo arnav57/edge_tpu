@@ -5,6 +5,8 @@ from cocotb.triggers import Timer, RisingEdge, ClockCycles
 import numpy as np
 import numpy.typing as npt
 
+from pprint import pformat
+
 import logging
 
 from .model_pe import ProcessingElement
@@ -101,18 +103,10 @@ class SystolicArray():
 	def get_pe(self, row_idx, col_idx):
 		return self._dut.I_systolic_core.I_systolic.pe_row[row_idx].pe_col[col_idx].I_ws_pe
 
-
-
 	async def start_clock(self):
 		clock = Clock(self.clock, 6.75, unit="ns")
 		cocotb.start_soon(clock.start())
 
-	def validate_loaded_weights(self):
-		for row in range(self.nrows):
-			for col in range(self.ncols):
-				desired_value = weights[row][col]
-				actual_value  = self.get_pe(row, col).B_r.value.to_signed()
-				self.logger.info(f"[{row}, {col}] Desired: {desired_value}, Actual: {actual_value}")
 
 	#### SEQUENCES ####
 
@@ -138,10 +132,7 @@ class SystolicArray():
 
 		await ClockCycles(self.clock, 2)
 
-		for idx in self.pe:
-			self.logger.info(self.pe[idx])
-
-	async def load_random_weights(self):
+	async def load_random_weights(self, clear_after=False):
 		weights = np.random.randint(-128, 128, size=(self.nrows, self.ncols), dtype=np.int8)
 		activation_inputs = self._to_weights(weights)
 		self.loading.value = 1
@@ -157,7 +148,6 @@ class SystolicArray():
 			if (col == 1):
 				self.latch.value = 0
 			await RisingEdge(self.clock)
-			self.logger.debug(f"Loaded Activation Inputs:\n{activation_inputs[col]}\n")
 
 		# reset the inputs to 0 after
 		self.latch.value = 0
@@ -168,9 +158,24 @@ class SystolicArray():
 		# wait for the signals to propagate
 		await ClockCycles(self.clock, self.ncols * 4)
 
+		weight_value_to_check = None
+		if clear_after:
+			weight_value_to_check = 0
+			self.clear.value = 1
+			await RisingEdge(self.clock)
+			self.clear.value = 0
+			await RisingEdge(self.clock)
+
 		# validate that each PE has the weight stored properly
 		for idx in self.pe:
-			self.pe[idx].validate()
+			self.pe[idx].validate(weight_value=weight_value_to_check)
+
+		if clear_after:
+			self.logger.info(f"Succesfully loaded random weights, and cleared them to 0")
+		else:
+			self.logger.info(f"Succesfully loaded the following weights into the array:\n{pformat(weights)}")
+
+		return weights
 
 
 

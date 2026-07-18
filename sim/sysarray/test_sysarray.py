@@ -30,7 +30,13 @@ async def sysarray_load_weights_test(dut):
     array = SystolicArray(dut)
     await array.start_clock()
     await array.reset_dut()
-    await array.load_random_weights()
+    weights = await array.load_random_weights()
 
+@cocotb.test()
+async def sysarray_clear_weights_test(dut):
+    array = SystolicArray(dut)
+    await array.start_clock()
+    await array.reset_dut()
+    weights = await array.load_random_weights(clear_after=True)
 
 

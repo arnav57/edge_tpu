@@ -64,13 +64,11 @@ class ProcessingElement():
 		return self._stored_weight
 
 	#### HELPERS ####
-	def validate(self):
+	def validate(self, weight_value:int=None):
 		actual = self._dut.B_r.value.to_signed()
-		desired = self.weight
+		desired = self.weight if weight_value is None else weight_value
 		cond = (actual == desired)
-		if (cond):
-			self.logger.info(f"weights match :: {actual} vs {desired}")
-		else:
+		if not (cond):
 			self.logger.error(f"weights do not match! :: {actual} vs {desired}")
 		assert cond
 
@@ -80,7 +78,9 @@ class ProcessingElement():
 		while True:
 			await RisingEdge(self.clock)
 
-			if self.latch.value == 1:
+			if self.clear.value == 1:
+				self._stored_weight = 0
+			elif self.latch.value == 1:
 				self._stored_weight = self.activation_in.value.to_signed()
-				self.logger.info(f"Stored weight: {self.weight}")
+
 
