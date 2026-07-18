@@ -7,6 +7,8 @@ import numpy.typing as npt
 
 import logging
 
+from .model_pe import ProcessingElement
+
 class SystolicArray():
 
 	#### CONSTRUCTOR ####
@@ -20,8 +22,18 @@ class SystolicArray():
 		self.logger = logging.getLogger("SYSTOLIC-ARRAY")
 		self.logger.setLevel(logging.DEBUG)
 
-		# internal state (desired)
-		self.weights = None
+		# create a grid of processing elements
+		self.pe = {}
+		for i in range(self.nrows):
+			for j in range(self.ncols):
+				position = (i , j)
+				element  = ProcessingElement(
+					dut = self.get_pe(i, j),
+					row_idx = i,
+					col_idx = j
+				)
+				self.pe[position] = element
+
 
 	#### DIRECT PIN ACCESS ####
 
@@ -38,12 +50,20 @@ class SystolicArray():
 		return self._dut.loading_i
 
 	@property
+	def clear(self):
+		return self._dut.clear_i
+
+	@property
 	def latch(self):
 		return self._dut.latch_i
 
 	@property
-	def clear(self):
-		return self._dut.clear_i
+	def write_en(self):
+		return self._dut.wr_en_i
+
+	@property
+	def read_en(self):
+		return self._dut.rd_en_i
 
 	#### INDEXED PIN ACCESS ####
 
@@ -72,7 +92,7 @@ class SystolicArray():
 	
 	def _to_weights(self, in_matrix:npt.NDArray[np.int8]):
 		# format as a list of cols
-		cols_list = [in_matrix[:, i].tolist().reverse() for i in range(in_matrix.shape[1])]
+		cols_list = [in_matrix[:, i].tolist() for i in range(in_matrix.shape[1])]
 		return cols_list
 
 
@@ -81,15 +101,29 @@ class SystolicArray():
 	def get_pe(self, row_idx, col_idx):
 		return self._dut.I_systolic_core.I_systolic.pe_row[row_idx].pe_col[col_idx].I_ws_pe
 
+
+
 	async def start_clock(self):
 		clock = Clock(self.clock, 6.75, unit="ns")
 		cocotb.start_soon(clock.start())
 
+	def validate_loaded_weights(self):
+		for row in range(self.nrows):
+			for col in range(self.ncols):
+				desired_value = weights[row][col]
+				actual_value  = self.get_pe(row, col).B_r.value.to_signed()
+				self.logger.info(f"[{row}, {col}] Desired: {desired_value}, Actual: {actual_value}")
+
+	#### SEQUENCES ####
+
 	async def reset_dut(self, cycles=10):
-		self.reset.value   = 0
-		self.latch.value   = 0
-		self.clear.value   = 0
-		self.loading.value = 0
+		self.clock.value     = 0
+		self.reset.value     = 0
+		self.loading.value   = 0
+		self.clear.value     = 0
+		self.latch.value     = 0
+		self.write_en.value  = 0
+		self.read_en.value   = 0
 
 		for row in range(self.nrows):
 			self.activation_in(row).value       = 0
@@ -104,49 +138,41 @@ class SystolicArray():
 
 		await ClockCycles(self.clock, 2)
 
-	async def load_weights(self):
+		for idx in self.pe:
+			self.logger.info(self.pe[idx])
+
+	async def load_random_weights(self):
 		weights = np.random.randint(-128, 128, size=(self.nrows, self.ncols), dtype=np.int8)
 		activation_inputs = self._to_weights(weights)
-
-		self.logger.info(f"Loading Weights:\n{weights}\n")
-		self.logger.info(f"Toggled Loading Mode to 1")
 		self.loading.value = 1
 
 		await RisingEdge(self.clock)
+
+		self.latch.value = 1
 
 		# load the matrix in col by col
 		for col in range(self.ncols):
 			for row in range(self.nrows):
 				self.activation_in(row).value = activation_inputs[col][row]
+			if (col == 1):
+				self.latch.value = 0
 			await RisingEdge(self.clock)
 			self.logger.debug(f"Loaded Activation Inputs:\n{activation_inputs[col]}\n")
 
 		# reset the inputs to 0 after
+		self.latch.value = 0
 		for row in range(self.nrows):
 			self.activation_in(row).value       = 0
 			self.activation_valid_in(row).value = 0
 
 		# wait for the signals to propagate
-		await ClockCycles(self.clock, self.ncols * 2 - self.ncols)
+		await ClockCycles(self.clock, self.ncols * 4)
 
-		self.logger.info(f"Toggled Loading Mode to 0")
-		self.loading.value = 0
-		self.logger.info(f"Toggled Latch to 1")
-		self.latch.value   = 1
+		# validate that each PE has the weight stored properly
+		for idx in self.pe:
+			self.pe[idx].validate()
 
-		await ClockCycles(self.clock, 5)
 
-		self.latch.value   = 0
-		self.logger.info(f"Toggled Latch to 0")
-
-		## ASSERTIONS
-		for row in range(self.nrows):
-			for col in range(self.ncols):
-				desired_value = weights[row][col]
-				actual_value  = self.get_pe(row, col).B_r.value.to_signed()
-				self.logger.info(f"[{row}, {col}] Desired: {desired_value}, Actual: {actual_value}")
-
-		return weights
 
 
 

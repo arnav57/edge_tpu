@@ -16,8 +16,9 @@ SIM_BUILD           = ../results/sysarray/sim_build
 COCOTB_RESULTS_FILE = ../results/sysarray/results.xml
 
 VERILOG_SOURCES  = $(RTL_ROOT)/tpu/tpu_pkg.sv
+VERILOG_SOURCES += $(RTL_ROOT)/std/std_sync_fifo.sv
 VERILOG_SOURCES += $(RTL_ROOT)/sysarray/ws_pe.sv
-VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarraw_skew.sv
+VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarray_skew.sv
 VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarray.sv
 VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarray_core.sv
 VERILOG_SOURCES += $(RTL_ROOT)/sysarray/sysarray_top.sv
@@ -32,7 +33,6 @@ SIM_ARGS += -suppress 12110
 SIM_ARGS += -do "$(COMMON_ROOT)/wave.do"
 SIM_ARGS += -wlf "$(SIM_BUILD)/waves.wlf"
 
-export SIM_BUILD
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

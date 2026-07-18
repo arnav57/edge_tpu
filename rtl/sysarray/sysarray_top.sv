@@ -25,6 +25,10 @@ module sysarray_top #(
 	input  wire                         clear_i,
 	input  wire                         loading_i,
 
+	// FIFO Front end
+	input  wire							wr_en_i,
+	input  wire							rd_en_i,
+
 	// Activation IO
 	input  wire signed [DATA_WIDTH-1:0] A_i  [NUM_ROWS]  ,
 	output wire signed [DATA_WIDTH-1:0] A_o  [NUM_ROWS]  ,
@@ -51,6 +55,8 @@ sysarray_core #(
 	.latch_i(latch_i),
 	.clear_i(clear_i),
 	.loading_i(loading_i),
+	.rd_en_i  (rd_en_i),
+	.wr_en_i  (wr_en_i),
 	.A_i    (A_i    ),
 	.A_o    (A_o    ),
 	.P_i    (P_i    ),

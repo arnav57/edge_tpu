@@ -25,6 +25,10 @@ module sysarray_core #(
 	input  wire                         latch_i,
 	input  wire                         clear_i,
 
+	// FIFO Front end
+	input  wire							wr_en_i,
+	input  wire							rd_en_i,
+
 	// Activation IO
 	input  wire signed [DATA_WIDTH-1:0] A_i  [NUM_ROWS]  ,
 	output wire signed [DATA_WIDTH-1:0] A_o  [NUM_ROWS]  ,
@@ -47,23 +51,20 @@ module sysarray_core #(
 logic signed [DATA_WIDTH-1:0] A_skewed_int  [NUM_ROWS];
 logic 						  Av_skewed_int [NUM_ROWS];
 
-genvar i;
-generate
-	for (i = 0; i < NUM_ROWS; i++) begin : a_skew
-		sys_skew #(
-			.DATA_WIDTH( DATA_WIDTH ),
-			.DEPTH     ( i          )
-		) I_systolic_A_skew (
-			.clk_i                  ( clk_i            ),
-			.rstn_i                 ( rstn_i           ),
-			.bypass_i               ( loading_i        ),
-			.signal_i               ( A_i[i]           ),
-			.signal_valid_i         ( Av_i[i]          ),
-			.signal_skewed_o        ( A_skewed_int[i]  ),
-			.signal_valid_skewed_o  ( Av_skewed_int[i] )
-		);
-	end
-endgenerate
+/// Instantiate the Activation Skewing Mechanism
+sysarray_skew #(
+	.NUM_ROWS   (  NUM_ROWS  ),
+	.NUM_COLS   (  NUM_COLS  ),
+	.DATA_WIDTH ( DATA_WIDTH )
+) I_systolic_skew (
+	.clk_i     ( clk_i        ),
+	.rstn_i    ( rstn_i       ),
+	.loading_i ( loading_i    ),
+	.data_i    ( A_i          ),
+	.data_o    ( A_skewed_int ),
+	.rd_en_i   ( rd_en_i      ),
+	.wr_en_i   ( wr_en_i      )
+);
 
 
 sysarray #(

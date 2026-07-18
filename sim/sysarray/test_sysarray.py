@@ -20,17 +20,17 @@ NUM_COLS = 20
 
 @cocotb.test()
 async def sysarray_base_test(dut):
-    array = SystolicArray(dut, num_rows=NUM_ROWS, num_cols=NUM_COLS)
+    array = SystolicArray(dut)
     await array.start_clock()
-    await array.reset_dut(cycles=10)
+    await array.reset_dut()
 
 
 @cocotb.test()
 async def sysarray_load_weights_test(dut):
-    array = SystolicArray(dut, num_rows=NUM_ROWS, num_cols=NUM_COLS)
+    array = SystolicArray(dut)
     await array.start_clock()
-    await array.reset_dut(cycles=10)
-    weights = await array.load_weights()
+    await array.reset_dut()
+    await array.load_random_weights()
 
 
 

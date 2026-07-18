@@ -68,6 +68,33 @@ generate
 	end
 endgenerate
 
+
+//////////////////// Per Column Latch Mesh (for weight loading)
+
+logic latch_mesh [NUM_COLS];
+
+genvar x;
+generate
+	for (x = 0; x < NUM_COLS; x++) begin : pe_latch_mesh
+		if (x == 0) begin
+			assign latch_mesh[x] = latch_i;
+		end else begin
+			logic [3:0] latch_delay;
+			always_ff @(posedge clk_i or negedge rstn_i) begin
+				if(~rstn_i) begin
+					 latch_delay <= 4'd0;
+				end else begin
+					 latch_delay[0] <= latch_mesh[x - 1];
+					 latch_delay[1] <= latch_delay[0];
+					 latch_delay[2] <= latch_delay[1];
+					 latch_delay[3] <= latch_delay[2];
+				end
+			end
+			assign latch_mesh[x] = latch_delay[3];
+		end
+	end
+endgenerate
+
 //////////////////// PE GRID
 genvar i, j;
 generate 
@@ -80,7 +107,7 @@ generate
 			) I_ws_pe (
 				.clk_i   (clk_i),
 				.rstn_i  (rstn_i),
-				.latch_i (latch_i),
+				.latch_i (latch_mesh[j]),
 				.clear_i (clear_i),
 
 				.Av_i    (av_mesh[i][j]),
