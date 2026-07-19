@@ -40,9 +40,7 @@ module sysarray_top #(
 	output wire signed [ACCM_WIDTH-1:0] P_o  [NUM_COLS]  ,
 
 	// Validity Flags
-	input  wire                         Av_i [NUM_ROWS]  ,
-	output wire                         Av_o [NUM_ROWS]  ,
-	output wire                         Pv_o [NUM_COLS]
+	output wire                         Av_o [NUM_ROWS] 
 
 );
 
@@ -65,8 +63,7 @@ sysarray_core #(
 	.A_o    (A_o    ),
 	.P_i    (P_i    ),
 	.P_o    (P_o    ),
-	.Av_o   (Av_o   ),
-	.Pv_o   (Pv_o   )
+	.Av_o   (Av_o   )
 );
 
 

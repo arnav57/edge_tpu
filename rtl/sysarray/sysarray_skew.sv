@@ -5,8 +5,7 @@
 import tpu_pkg::*;
 
 module sysarray_skew #(
-	parameter int NUM_ROWS   = tpu_pkg::ARRAY_NUM_ROWS,
-	parameter int NUM_COLS   = tpu_pkg::ARRAY_NUM_COLS,
+	parameter int DIM_SIZE   = tpu_pkg::ARRAY_NUM_ROWS,
 	parameter int DATA_WIDTH = tpu_pkg::ACTV_WIDTH
 ) (
 	input wire clk_i,
@@ -14,25 +13,25 @@ module sysarray_skew #(
 
 	input wire loading_i,
 
-	input  wire signed [DATA_WIDTH-1:0] data_i  [NUM_ROWS]  ,
-	output wire signed [DATA_WIDTH-1:0] data_o  [NUM_ROWS]  ,
+	input  wire signed [DATA_WIDTH-1:0] data_i  [DIM_SIZE]  ,
+	output wire signed [DATA_WIDTH-1:0] data_o  [DIM_SIZE]  ,
 
-	output wire signed 					data_valid_o [NUM_ROWS],
+	output wire signed 					data_valid_o [DIM_SIZE],
 
 	input wire rd_en_i,
 	input wire wr_en_i
 );
 
 // Local Signals
-wire         [NUM_ROWS-1:0]  rd_en_mesh;
-wire signed [DATA_WIDTH-1:0] fifo_data  [NUM_ROWS];
+wire         [DIM_SIZE-1:0]  rd_en_mesh;
+wire signed [DATA_WIDTH-1:0] fifo_data  [DIM_SIZE];
 
 // generate one FIFO per row
 genvar row;
-generate for (row = 0; row < NUM_ROWS; row++) begin : gen_skew_fifo
+generate for (row = 0; row < DIM_SIZE; row++) begin : gen_skew_fifo
 	
 	std_sync_fifo #(
-		.FIFO_DEPTH (  2*NUM_ROWS  ),
+		.FIFO_DEPTH (  2*DIM_SIZE  ),
 		.FIFO_WIDTH (  DATA_WIDTH  )
 	) I_skew_fifo (
 		.fifo_clk_i  (clk_i),
@@ -59,7 +58,7 @@ endgenerate
 
 // generate the flops connecting the read_en and latch delays
 genvar i;
-generate for (i = 0; i < NUM_ROWS; i++) begin : gen_meshes
+generate for (i = 0; i < DIM_SIZE; i++) begin : gen_meshes
 	if (i == 0) begin
 		assign rd_en_mesh[i] = rd_en_i;
 		logic valid_delay;

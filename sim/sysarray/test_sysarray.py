@@ -44,8 +44,16 @@ async def sysarray_do_computation_test(dut):
     array = SystolicArray(dut)
     await array.start_clock()
     await array.reset_dut()
+
+    # load weights
     weights = await array.load_random_weights()
-    await array.load_random_activations()
+
+    # then stream sums/activations in parallel
+    actv_task = cocotb.start_soon(array.load_random_activations())
+    sums_task = cocotb.start_soon(array.load_random_sums())
+
+    activations = await actv_task
+    sums        = await sums_task
 
 
 

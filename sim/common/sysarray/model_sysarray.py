@@ -67,13 +67,18 @@ class SystolicArray():
 	def activation_read_en(self):
 		return self._dut.actv_rd_en_i
 
+	@property
+	def sums_write_en(self):
+		return self._dut.sums_wr_en_i
+
+	@property
+	def sums_read_en(self):
+		return self._dut.sums_rd_en_i
+
 	#### INDEXED PIN ACCESS ####
 
 	def activation_in(self, row):
 		return self._dut.A_i[row]
-
-	def activation_valid_in(self, row):
-		return self._dut.Av_i[row]
 
 	def activation_out(self, row):
 		return self._dut.A_o[row]
@@ -92,10 +97,15 @@ class SystolicArray():
 
 	#### HIDDEN HELPERS ####
 	
-	def _to_vectors(self, in_matrix:npt.NDArray[np.int8]):
-		# format as a list of cols
-		cols_list = [in_matrix[:, i].tolist() for i in range(in_matrix.shape[1])]
-		return cols_list
+	def _to_vectors(self, in_matrix:npt.NDArray[np.int8], type="activation"):
+		if type == "activation":
+			# format as a list of cols
+			olist = [in_matrix[:, i].tolist() for i in range(in_matrix.shape[1])]
+		else:
+			# format as a list of rows
+			olist = [in_matrix[i, :].tolist() for i in range(in_matrix.shape[0])]
+
+		return olist
 
 
 	#### PUBLIC HELPERS ####
@@ -126,21 +136,41 @@ class SystolicArray():
 		assert valid_sig.value == 0, f"Row {idx}'s valid signal stayed high longer than the expected {len(expected_data)} cycles!"
 		self.logger.info(f"Row {idx}'s validity and activation inputs are good")
 
+	async def _monitor_sum_col(self, idx:int, expected_data:list):
+		# Note: yes i know this basically is a duplicate of the above, could i have made it one function? yes - but i do not want to
+
+		data_sig  = self._dut.I_systolic_core.I_systolic.P_i[idx]
+		valid_sig = self._dut.I_systolic_core.I_systolic.Pv_i[idx]
+
+		while valid_sig.value != 1:
+			await RisingEdge(self.clock)
+
+		for i in range(len(expected_data)):
+			assert valid_sig.value == 1, f"Col {idx}'s Pv_i dropped early at cycle {i}!"
+
+			assert data_sig.value.to_signed() == expected_data[i], f"Col {idx}'s data mismatches, Expected {expected_data[i]}, got {data_sig.value.to_signed()}"
+
+			await RisingEdge(self.clock)
+
+		assert valid_sig.value == 0, f"Col {idx}'s valid signal stayed high longer than the expected {len(expected_data)} cycles!"
+		self.logger.info(f"Col {idx}'s validity and sum inputs are good")
+
 
 	#### SEQUENCES ####
 
 	async def reset_dut(self, cycles=10):
-		self.clock.value     = 0
 		self.reset.value     = 0
 		self.loading.value   = 0
 		self.clear.value     = 0
 		self.latch.value     = 0
 		self.activation_write_en.value  = 0
 		self.activation_read_en.value   = 0
+		self.sums_write_en.value  = 0
+		self.sums_read_en.value   = 0
+
 
 		for row in range(self.nrows):
 			self.activation_in(row).value       = 0
-			self.activation_valid_in(row).value = 0
 
 		for col in range(self.ncols):
 			self.sum_in(col).value = 0
@@ -172,7 +202,6 @@ class SystolicArray():
 		self.latch.value = 0
 		for row in range(self.nrows):
 			self.activation_in(row).value       = 0
-			self.activation_valid_in(row).value = 0
 
 		self.loading.value = 0
 
@@ -199,8 +228,8 @@ class SystolicArray():
 		return weights
 
 	async def load_random_activations(self):
-		weights = np.random.randint(-128, 128, size=(self.nrows, self.ncols), dtype=np.int8)
-		activation_inputs = self._to_vectors(weights)
+		activations = np.random.randint(-128, 128, size=(self.nrows, self.ncols), dtype=np.int8)
+		activation_inputs = self._to_vectors(activations, type="sums")
 
 		await RisingEdge(self.clock)
 
@@ -215,7 +244,6 @@ class SystolicArray():
 		self.activation_write_en.value = 0
 		for row in range(self.nrows):
 			self.activation_in(row).value       = 0
-			self.activation_valid_in(row).value = 0
 
 		# this bg monitor does the validation for this test
 		for row in range(self.nrows):
@@ -228,8 +256,48 @@ class SystolicArray():
 		await ClockCycles(self.clock, 20)
 
 		self.activation_read_en.value = 0
+		self.logger.info(f"Successfully provided the following activations into the array\n{pformat(activations)}")
 
 		await ClockCycles(self.clock, 10 * self.nrows)
+
+		return activations
+
+	async def load_random_sums(self):
+		sums = np.random.randint(-128, 128, size=(self.nrows, self.ncols), dtype=np.int8)
+		sum_inputs = self._to_vectors(sums, type="sum")
+
+		self.logger.info(f"Loading Random Sums:\n{pformat(sums)}")
+
+		await RisingEdge(self.clock)
+
+		# load the matrix in row by row
+		for row in range(self.nrows):
+			for col in range(self.ncols):
+				self.sum_in(col).value = sum_inputs[row][col]
+			self.sums_write_en.value = 1
+			await RisingEdge(self.clock)
+
+		# reset the inputs to 0 after
+		self.sums_write_en.value = 0
+		for col in range(self.ncols):
+			self.sum_in(col).value = 0
+
+		# this bg monitor does the validation for this test
+		for col in range(self.ncols):
+			expected_col_data = [sum_inputs[row][col] for row in range(self.nrows)]
+			cocotb.start_soon(self._monitor_sum_col(col, expected_col_data))
+
+		self.sums_read_en.value = 1
+
+		# there are nrows things in the FIFO now, so we wait nrows ccs
+		await ClockCycles(self.clock, self.nrows)
+
+		self.sums_read_en.value = 0
+		self.logger.info(f"Successfully provided the following sums into the array\n{pformat(sums)}")
+
+		await ClockCycles(self.clock, 10 * self.ncols)
+
+		return sums
 
 
 

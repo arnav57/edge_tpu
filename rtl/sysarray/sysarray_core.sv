@@ -40,8 +40,7 @@ module sysarray_core #(
 	output wire signed [ACCM_WIDTH-1:0] P_o  [NUM_COLS]  ,
 
 	// Validity Flags
-	output wire                         Av_o [NUM_ROWS]  ,
-	output wire                         Pv_o [NUM_COLS]
+	output wire                         Av_o [NUM_ROWS]  
 
 );
 
@@ -51,13 +50,17 @@ module sysarray_core #(
 
 logic signed [DATA_WIDTH-1:0] A_skewed_int  [NUM_ROWS];
 logic 						  Av_skewed_int [NUM_ROWS];
-logic signed [DATA_WIDTH-1:0] P_skewed_int  [NUM_ROWS];
-logic 						  Pv_skewed_int [NUM_ROWS];
+logic signed [ACCM_WIDTH-1:0] P_skewed_int  [NUM_COLS];
+logic 						  Pv_skewed_int [NUM_COLS];
+
+// these nets send the outputs of the array to the output buffer
+logic signed [ACCM_WIDTH-1:0] P_to_buf  	   [NUM_COLS];
+logic 						  Pv_skewed_to_buf [NUM_COLS];
+logic 						  buffer_filled_int;
 
 /// Instantiate the Activation Skewing Mechanism
 sysarray_skew #(
-	.NUM_ROWS   (  NUM_ROWS  ),
-	.NUM_COLS   (  NUM_COLS  ),
+	.DIM_SIZE   (  NUM_ROWS  ),
 	.DATA_WIDTH ( DATA_WIDTH )
 ) I_systolic_A_skew (
 	.clk_i     ( clk_i        ),
@@ -72,9 +75,8 @@ sysarray_skew #(
 
 /// Instantiate the Sum Skewing Mechanism
 sysarray_skew #(
-	.NUM_ROWS   (  NUM_ROWS  ),
-	.NUM_COLS   (  NUM_COLS  ),
-	.DATA_WIDTH ( DATA_WIDTH )
+	.DIM_SIZE   (  NUM_COLS  ),
+	.DATA_WIDTH ( ACCM_WIDTH )
 ) I_systolic_P_skew (
 	.clk_i     ( clk_i        ),
 	.rstn_i    ( rstn_i       ),
@@ -100,12 +102,26 @@ sysarray #(
 	.clear_i  ( clear_i             ),
 	.A_i      ( A_skewed_int        ),
 	.A_o      ( A_o                 ),
-	.P_i      ( P_skewed_int                 ),
-	.P_o      ( P_o                 ),
+	.P_i      ( P_skewed_int        ),
+	.P_o      ( P_to_buf            ),
 	.Av_i     ( Av_skewed_int       ),
 	.Av_o     ( Av_o                ),
 	.Pv_i     ( Pv_skewed_int       ),
-	.Pv_o     ( Pv_o                )
+	.Pv_o     ( Pv_skewed_to_buf    )
+);
+
+/// Instantiate the Systolic Array's Output buffer
+sysarray_buf #(
+	.DIM_SIZE   (  NUM_COLS  ),
+	.DATA_WIDTH ( ACCM_WIDTH )
+) I_systolic_output_buf (
+	.clk_i      ( clk_i               ),
+	.rstn_i     ( rstn_i              ),
+	.wr_en_i    ( Pv_skewed_to_buf    ),
+	.rd_en_i    ( '{default: 0}       ),
+	.wr_data_i  ( P_to_buf            ),
+	.rd_data_o  ( /* FLOATING RN */   ),
+	.buf_full_o ( buffer_filled_int   )
 );
 
 
