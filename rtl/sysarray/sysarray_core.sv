@@ -26,8 +26,10 @@ module sysarray_core #(
 	input  wire                         clear_i,
 
 	// FIFO Front end
-	input  wire							wr_en_i,
-	input  wire							rd_en_i,
+	input  wire							actv_wr_en_i,
+	input  wire							sums_wr_en_i,
+	input  wire							actv_rd_en_i,
+	input  wire							sums_rd_en_i,
 
 	// Activation IO
 	input  wire signed [DATA_WIDTH-1:0] A_i  [NUM_ROWS]  ,
@@ -38,7 +40,6 @@ module sysarray_core #(
 	output wire signed [ACCM_WIDTH-1:0] P_o  [NUM_COLS]  ,
 
 	// Validity Flags
-	input  wire                         Av_i [NUM_ROWS]  ,
 	output wire                         Av_o [NUM_ROWS]  ,
 	output wire                         Pv_o [NUM_COLS]
 
@@ -50,24 +51,43 @@ module sysarray_core #(
 
 logic signed [DATA_WIDTH-1:0] A_skewed_int  [NUM_ROWS];
 logic 						  Av_skewed_int [NUM_ROWS];
+logic signed [DATA_WIDTH-1:0] P_skewed_int  [NUM_ROWS];
+logic 						  Pv_skewed_int [NUM_ROWS];
 
 /// Instantiate the Activation Skewing Mechanism
 sysarray_skew #(
 	.NUM_ROWS   (  NUM_ROWS  ),
 	.NUM_COLS   (  NUM_COLS  ),
 	.DATA_WIDTH ( DATA_WIDTH )
-) I_systolic_skew (
+) I_systolic_A_skew (
 	.clk_i     ( clk_i        ),
 	.rstn_i    ( rstn_i       ),
 	.loading_i ( loading_i    ),
 	.data_i    ( A_i          ),
 	.data_o    ( A_skewed_int ),
 	.data_valid_o( Av_skewed_int),
-	.rd_en_i   ( rd_en_i      ),
-	.wr_en_i   ( wr_en_i      )
+	.rd_en_i   ( actv_rd_en_i      ),
+	.wr_en_i   ( actv_wr_en_i      )
+);
+
+/// Instantiate the Sum Skewing Mechanism
+sysarray_skew #(
+	.NUM_ROWS   (  NUM_ROWS  ),
+	.NUM_COLS   (  NUM_COLS  ),
+	.DATA_WIDTH ( DATA_WIDTH )
+) I_systolic_P_skew (
+	.clk_i     ( clk_i        ),
+	.rstn_i    ( rstn_i       ),
+	.loading_i ( 1'b0         ), // There is no path to load weights from the sums
+	.data_i    ( P_i          ),
+	.data_o    ( P_skewed_int ),
+	.data_valid_o( Pv_skewed_int),
+	.rd_en_i   ( sums_rd_en_i      ),
+	.wr_en_i   ( sums_wr_en_i      )
 );
 
 
+/// Instiantiate the Systolic Array
 sysarray #(
 	.DATA_WIDTH  ( DATA_WIDTH ),
 	.ACCM_WIDTH  ( ACCM_WIDTH ),
@@ -80,11 +100,11 @@ sysarray #(
 	.clear_i  ( clear_i             ),
 	.A_i      ( A_skewed_int        ),
 	.A_o      ( A_o                 ),
-	.P_i      ( P_i                 ),
+	.P_i      ( P_skewed_int                 ),
 	.P_o      ( P_o                 ),
 	.Av_i     ( Av_skewed_int       ),
 	.Av_o     ( Av_o                ),
-	.Pv_i     ( '{default: 1'b1}   ), // the tick here lets this replication produce an unpacked type that auto-sizes
+	.Pv_i     ( Pv_skewed_int       ),
 	.Pv_o     ( Pv_o                )
 );
 

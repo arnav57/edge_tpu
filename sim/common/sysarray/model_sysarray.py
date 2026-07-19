@@ -60,12 +60,12 @@ class SystolicArray():
 		return self._dut.latch_i
 
 	@property
-	def write_en(self):
-		return self._dut.wr_en_i
+	def activation_write_en(self):
+		return self._dut.actv_wr_en_i
 
 	@property
-	def read_en(self):
-		return self._dut.rd_en_i
+	def activation_read_en(self):
+		return self._dut.actv_rd_en_i
 
 	#### INDEXED PIN ACCESS ####
 
@@ -107,6 +107,25 @@ class SystolicArray():
 		clock = Clock(self.clock, 6.75, unit="ns")
 		cocotb.start_soon(clock.start())
 
+	#### MONITORS ####
+
+	async def _monitor_activation_row(self, idx:int, expected_data:list):
+		data_sig  = self._dut.I_systolic_core.I_systolic.A_i[idx]
+		valid_sig = self._dut.I_systolic_core.I_systolic.Av_i[idx]
+
+		while valid_sig.value != 1:
+			await RisingEdge(self.clock)
+
+		for i in range(len(expected_data)):
+			assert valid_sig.value == 1, f"Row {idx}'s Av_i dropped early at cycle {i}!"
+
+			assert data_sig.value.to_signed() == expected_data[i], f"Row {idx}'s data mismatches, Expected {expected_data[i]}, got {data_sig.value.to_signed()}"
+
+			await RisingEdge(self.clock)
+
+		assert valid_sig.value == 0, f"Row {idx}'s valid signal stayed high longer than the expected {len(expected_data)} cycles!"
+		self.logger.info(f"Row {idx}'s validity and activation inputs are good")
+
 
 	#### SEQUENCES ####
 
@@ -116,8 +135,8 @@ class SystolicArray():
 		self.loading.value   = 0
 		self.clear.value     = 0
 		self.latch.value     = 0
-		self.write_en.value  = 0
-		self.read_en.value   = 0
+		self.activation_write_en.value  = 0
+		self.activation_read_en.value   = 0
 
 		for row in range(self.nrows):
 			self.activation_in(row).value       = 0
@@ -189,23 +208,26 @@ class SystolicArray():
 		for col in range(self.ncols):
 			for row in range(self.nrows):
 				self.activation_in(row).value = activation_inputs[col][row]
-				self.write_en.value = 1
+				self.activation_write_en.value = 1
 			await RisingEdge(self.clock)
 
-		#await RisingEdge(self.clock)
-
 		# reset the inputs to 0 after
-		self.write_en.value = 0
+		self.activation_write_en.value = 0
 		for row in range(self.nrows):
 			self.activation_in(row).value       = 0
 			self.activation_valid_in(row).value = 0
 
-		self.read_en.value = 1
+		# this bg monitor does the validation for this test
+		for row in range(self.nrows):
+			expected_row_data = [activation_inputs[col][row] for col in range(self.ncols)]
+			cocotb.start_soon(self._monitor_activation_row(row, expected_row_data))
+
+		self.activation_read_en.value = 1
 
 		# there are 20 things in the FIFO now, so we wait 20 ccs
 		await ClockCycles(self.clock, 20)
 
-		self.read_en.value = 0
+		self.activation_read_en.value = 0
 
 		await ClockCycles(self.clock, 10 * self.nrows)
 

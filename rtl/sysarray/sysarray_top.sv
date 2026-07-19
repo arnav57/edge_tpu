@@ -26,8 +26,10 @@ module sysarray_top #(
 	input  wire                         loading_i,
 
 	// FIFO Front end
-	input  wire							wr_en_i,
-	input  wire							rd_en_i,
+	input  wire							actv_rd_en_i,
+	input  wire							actv_wr_en_i,
+	input  wire							sums_rd_en_i,
+	input  wire							sums_wr_en_i,
 
 	// Activation IO
 	input  wire signed [DATA_WIDTH-1:0] A_i  [NUM_ROWS]  ,
@@ -55,13 +57,14 @@ sysarray_core #(
 	.latch_i(latch_i),
 	.clear_i(clear_i),
 	.loading_i(loading_i),
-	.rd_en_i  (rd_en_i),
-	.wr_en_i  (wr_en_i),
+	.actv_rd_en_i  (actv_rd_en_i),
+	.actv_wr_en_i  (actv_wr_en_i),
+	.sums_rd_en_i  (sums_rd_en_i),
+	.sums_wr_en_i  (sums_wr_en_i),
 	.A_i    (A_i    ),
 	.A_o    (A_o    ),
 	.P_i    (P_i    ),
 	.P_o    (P_o    ),
-	.Av_i   (Av_i   ),
 	.Av_o   (Av_o   ),
 	.Pv_o   (Pv_o   )
 );
