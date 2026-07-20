@@ -1,6 +1,7 @@
 import os, sys
 from pathlib import Path
 import cocotb
+from cocotb.triggers import Timer, RisingEdge, ClockCycles
 import numpy as np
 import logging
 from pprint import pprint
@@ -54,6 +55,8 @@ async def sysarray_do_computation_test(dut):
 
     activations = await actv_task
     sums        = await sums_task
+
+    await ClockCycles(array.clock, 500)
 
 
 

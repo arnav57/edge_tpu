@@ -266,8 +266,6 @@ class SystolicArray():
 		sums = np.random.randint(-128, 128, size=(self.nrows, self.ncols), dtype=np.int8)
 		sum_inputs = self._to_vectors(sums, type="sum")
 
-		self.logger.info(f"Loading Random Sums:\n{pformat(sums)}")
-
 		await RisingEdge(self.clock)
 
 		# load the matrix in row by row

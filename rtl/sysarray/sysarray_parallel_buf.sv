@@ -5,7 +5,7 @@
 
 import tpu_pkg::*;
 
-module sysarray_buf #(
+module sysarray_parallel_buf #(
 	// Inherit PE Config
 	parameter int DATA_WIDTH = tpu_pkg::PSUM_WIDTH,
 
@@ -25,7 +25,9 @@ module sysarray_buf #(
 );
 
 // net to know when all FIFOs are full
-wire [DIM_SIZE-1:0] fifo_full;
+wire [$clog2(DIM_SIZE):0] fifo_size [DIM_SIZE];
+// logic 					  fifo_full [DIM_SIZE];
+logic [DIM_SIZE-1:0]	  fifo_full_packed;
 
 // generate N=DIM_SIZE FIFOs
 genvar i;
@@ -46,17 +48,21 @@ generate for (i = 0; i < DIM_SIZE; i++) begin : gen_buf_fifo
 
 		.rd_ptr_o     ( /* FLOATING */ ),
 		.wr_ptr_o     ( /* FLOATING */ ),
-		.fifo_sz_o    ( /* FLOATING */ ),
-		.fifo_full_o  ( fifo_full[i]   ),
+		.fifo_sz_o    ( fifo_size[i]   ),
+		.fifo_full_o  ( /* FLOATING */ ),
 		.fifo_empty_o ( /* FLOATING */ )
 	);
+
+	assign fifo_full_packed[i] = (fifo_size[i] == 'd20);
 
 end	
 endgenerate
 
-assign buf_full_o = &fifo_full; // "every FIFO is full" flag lmao
 
 
-endmodule : sysarray_buf
+assign buf_full_o = &fifo_full_packed; // "every FIFO is full (with 20 things)" flag lmao
+
+
+endmodule : sysarray_parallel_buf
 
 `default_nettype wire

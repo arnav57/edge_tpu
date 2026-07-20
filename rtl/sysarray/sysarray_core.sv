@@ -55,8 +55,12 @@ logic 						  Pv_skewed_int [NUM_COLS];
 
 // these nets send the outputs of the array to the output buffer
 logic signed [ACCM_WIDTH-1:0] P_to_buf  	   [NUM_COLS];
-logic 						  Pv_skewed_to_buf [NUM_COLS];
+logic 						  Pv_to_buf        [NUM_COLS];
 logic 						  buffer_filled_int;
+
+// these nets control dataflow between parallel and serial output buffers
+logic 						  parallel_buf_rd_en   [NUM_COLS];
+logic signed [ACCM_WIDTH-1:0] parallel_buf_rd_data [NUM_COLS];
 
 /// Instantiate the Activation Skewing Mechanism
 sysarray_skew #(
@@ -107,23 +111,39 @@ sysarray #(
 	.Av_i     ( Av_skewed_int       ),
 	.Av_o     ( Av_o                ),
 	.Pv_i     ( Pv_skewed_int       ),
-	.Pv_o     ( Pv_skewed_to_buf    )
+	.Pv_o     ( Pv_to_buf    )
 );
 
 /// Instantiate the Systolic Array's Output buffer
-sysarray_buf #(
+/// This is the parallel output buffer
+sysarray_parallel_buf #(
 	.DIM_SIZE   (  NUM_COLS  ),
 	.DATA_WIDTH ( ACCM_WIDTH )
-) I_systolic_output_buf (
-	.clk_i      ( clk_i               ),
-	.rstn_i     ( rstn_i              ),
-	.wr_en_i    ( Pv_skewed_to_buf    ),
-	.rd_en_i    ( '{default: 0}       ),
-	.wr_data_i  ( P_to_buf            ),
-	.rd_data_o  ( /* FLOATING RN */   ),
-	.buf_full_o ( buffer_filled_int   )
+) I_systolic_parallel_buf (
+	.clk_i      ( clk_i                ),
+	.rstn_i     ( rstn_i               ),
+	.wr_en_i    ( Pv_to_buf            ),
+	.rd_en_i    ( parallel_buf_rd_en   ),
+	.wr_data_i  ( P_to_buf             ),
+	.rd_data_o  ( parallel_buf_rd_data ),
+	.buf_full_o ( buffer_filled_int    )
 );
 
+/// Instantiate the serial output buffer.
+/// In order to send this to the host device over GbE, we need it serialized
+sysarray_serial_buf #(
+	.DATA_WIDTH  (     PSUM_WIDTH      ),
+	.DIM_SIZE    ( NUM_ROWS * NUM_COLS )
+) I_sysarray_serial_buf (
+	.clk_i             (clk_i                ),
+	.rstn_i            (rstn_i               ),
+	.parallel_rd_data_i(parallel_buf_rd_data ),
+	.parallel_rd_en_o  (parallel_buf_rd_en   ),
+	.serial_rd_en_i    ( /* FLOATING RN */   ),
+	.serial_rd_data_o  ( /* FLOATING RN */   ),
+	.parallel_full_i   (buffer_filled_int    ),
+	.serial_full_o     ( /* FLOATING RN */   )
+);
 
 
 endmodule : sysarray_core
